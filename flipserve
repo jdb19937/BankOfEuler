@@ -1,0 +1,110 @@
+#!/usr/bin/perl
+
+use POSIX ":sys_wait_h";
+use IO::Socket::INET;
+
+my $home = $ENV{BANKOFEULER_HOME} || "/usr/local/BankOfEuler";
+my $conf = "$home/flipserve.conf";
+-e $conf or die "$0: $conf: $!\n";
+
+my $pidfn = "$home/logs/flipserve.pid";
+
+my $cmd = shift(@ARGV);
+if ($cmd eq "start") {
+  open(STDOUT, ">> $home/logs/flipserve.log");
+  open(STDERR, ">&STDOUT") or die;
+  select(STDOUT);
+  $| = 1;
+  fork and exit 0;
+
+  if (-e $pidfn) {
+    print STDERR "$0: $pidfn exists\n";
+    exit 1;
+  }
+
+  open(my $pidfile, "> $pidfn") or die "$0: $pidfn: $!\n";
+  print $pidfile "$$\n";
+  close($pidfile);
+}
+
+if ($cmd eq "kill") {
+  open(my $pidfile, "< $pidfn") or die "$0: $pidfn: $!\n";
+  chomp(my $pid = <$pidfile>) or die;
+  close($pidfile);
+
+  kill(9, $pid);
+  print STDERR "Killed $pid\n";
+  unlink($pidfn);
+  exit 0;
+}
+
+if ($cmd eq "status") {
+  my $pid = eval {
+    open(my $pidfile, "< $pidfn") or die "$0: $pidfn: $!\n";
+    chomp(my $pid = <$pidfile>) or die;
+    $pid = int($pid);
+    close($pidfile);
+
+    kill(0, $pid) or die "$pid not running";
+    $pid
+  };
+
+  if ($@) {
+    print STDERR "flipserve is down.\n";
+    exit 1;
+  } else {
+    print STDERR "flipserve is up, pid $pid.\n";
+    exit 0;
+  }
+}
+
+if (fork) {
+  exec('stunnel', $conf);
+  die;
+}
+
+my $s = new IO::Socket::INET
+  LocalHost	=> "localhost",
+  LocalPort	=> 9393,
+  Reuse		=> 1,
+  Listen	=> 16,
+or die;
+
+my $pid;
+
+$SIG{PIPE} = sub { warn "got SIGPIPE, $pid will kill me"; };
+$SIG{CHLD} = IGNORE;
+
+while (1) {
+  my $c1 = $s->accept or die;
+  my $c2 = $s->accept or die;
+
+  unless (fork) {
+    $pid = fork;
+    if ($pid) {
+      select($c2);
+      $| = 1;
+
+      print ("\1" . pack("N", 1) . "\n");
+      while (<$c1>) {
+        # print STDERR "[c1->c2] $_";
+        print $c2 $_;
+      }
+      kill 9, $pid;
+      exit 0;
+    } else {
+      $pid = getppid();
+      select($c1);
+      $| = 1;
+
+      print ("\1" . pack("N", 0) . "\n");
+      while (<$c2>) {
+        # print STDERR "[c2->c1] $_";
+        print $c1 $_;
+      }
+      kill 9, $pid;
+      exit 0;
+    }
+    die;
+  }
+}

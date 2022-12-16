@@ -1,0 +1,59 @@
+include Makefile.common
+
+OBJ = \
+  number.o elgamal.o \
+  positive.o small.o square.o authorize.o keytie.o \
+  ctx.o command.o execute.o \
+  account.o client.o \
+  bank.o server.o
+
+CXX = g++
+
+CXXFLAGS = -O3 -g
+
+.PHONY: all
+all: $(BIN) $(LIB) example qrspiral-all
+
+libBankOfEuler.a: $(OBJ)
+	ar rs $@ $^
+
+libBankOfEuler.so: $(OBJ)
+	$(CXX) -o $@ $(CXXFLAGS) -shared $^ -lgmp -lgmpxx -lm
+
+bankshell: bankshell.o libBankOfEuler.a
+	$(CXX) -o $@ $(CXXFLAGS) $^ -lgmp -lgmpxx -lm
+
+bankadmin: bankadmin.o libBankOfEuler.a
+	$(CXX) -o $@ $(CXXFLAGS) $^ -lgmp -lgmpxx -lm
+
+bankserve: bankserve.o libBankOfEuler.a
+	$(CXX) -o $@ $(CXXFLAGS) $^ -lgmp -lgmpxx -lm
+
+coinflip: coinflip.o libBankOfEuler.a
+	$(CXX) -o $@ $(CXXFLAGS) $^ -lgmp -lgmpxx -lm
+
+flipserve:
+	@ echo Nothing to do for flipserve.
+
+%.o: %.cpp
+	$(CXX) -o $@ $(CXXFLAGS) -c $<
+
+$(OBJ): $(HDR)
+
+bankshell.o bankadmin.o coinflip.o bankserve.o: $(HDR)
+
+.PHONY: clean
+clean: example-clean qrspiral-clean 
+	rm -f *.o bankshell bankserve coinflip bankadmin $(LIB)
+	rm -rf $(PROJECT).*
+	rm -f qrspiral qrspiral*.pgm
+
+.PHONY: example
+example:
+	make -C example
+
+.PHONY: example-clean
+example-clean:
+	make -C example clean
+
+include Makefile.qrspiral

@@ -1,0 +1,88 @@
+SOME QUESTIONS AND ANSWERS BY DAN
+
+How can I get started?
+
+	First read the README.
+
+How does bankserve store values?
+
+	An empty file whose name is a secure hash of g^x is written into
+	$BANKOFEULER_HOME/values.  The existence of the file confirms the
+	value of the number x.
+
+	Currently, bankserve does not guarantee the atomicity of operations.
+	That means, after a server crash or hardware failure, the server log
+	must be inspected for any incompleted multi-operation transactions
+	(splits and merges), and corrective action must be taken to rollback
+	the transaction or complete it if possible.
+
+	Because bankserve uses a file for each value, you may have problems
+	scaling past 2^20 values.  I encourage you to serve hundreds of
+	thousands of empty files in a single directory on an ext3fs.
+	But if you need more, the architecture may be extensible.
+	Consider scaling, without modifying BankOfEuler source, by writing
+	an optimized filesystem using FUSE (http://fuse.sourceforge.net).
+
+	In a server cluster, beware of using NFS until you have explained
+	the aforementioned atomicity issues.
+
+
+How does bankshell store values?
+
+	Using the same naming convention as bankserve, bankshell reads and
+	creates files in an account directory,
+	$BANKOFEULER_HOME/accounts/`whoami`.
+
+	Unlike on the server, files in the account directory are not empty.
+	Each file contains the plaintext value whose hash is its name, in
+	hexadecimal.  bankshell will automatically create a file in the account
+	directory when the number is known to be valuable, and it will delete
+	files known to be worthless.
+
+	For example, if you ask bankshell to split $20 into $8 and $12,
+	it will first perform the operation on the server.  On success,
+	the local file in the account directory whose name is the hash of
+	$20, if it exists, will be deleted, and two files respectively
+	named with the hashes of $8 and $12 will be created and filled
+	with the hexadecimal values of those dollar amounts.
+
+	And when bankshell is asked to merge two values into a sum,
+	it will first perform the operation, then create the sum file
+	in the accounts directory, then unlink the two parts' files
+	(if they exist).
+
+	The randomize command to bankshell splits a value into a valuable
+	part and a worthless part.  The worthless part is not saved in
+	the account directory, though of course it persists on the server.
+	The valuable part is saved, and the original value is unlinked.
+
+	Like bankserve, bankshell does not guarantee atomicity of operations.
+	If an operation fails unexpectedly, I recommend that you invoke an
+	external process to determine if it may in fact have succeeded, and
+	synchronize the local state with the server.
+
+
+Why does it use stunnel?
+
+	Client authentication is not needed, but some messages from the server
+	are not verifiable by the client's application layer, and the channel
+	needs to be encrypted to thwart eavesdroppers.
+
+	stunnel also handles networking, which simplifies the client and server
+	implementations.
+
+
+How can I learn more about the algorithms?
+
+	There are comments in some of the header files (*.h).
+
+	To view the gmp documentation, type:
+		info gmp
+
+	Some interesting web pages:
+		http://en.wikipedia.org/wiki/RSA
+		http://en.wikipedia.org/wiki/Carmichael_function
+		http://en.wikipedia.org/wiki/Proof_of_knowledge
+		http://senderek.de/SDLH/
+		http://www.secamlocal.ex.ac.uk/people/staff/mrwatkin/isoc/index.htm
+

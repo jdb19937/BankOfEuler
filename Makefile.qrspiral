@@ -1,0 +1,20 @@
+.PHONY: qrspiral-all
+qrspiral-all: qrspiral.55.pgm qrspiral.137.pgm qrspiral.65537.pgm
+
+qrspiral.55.pgm: qrspiral
+	./qrspiral 55 0 256 > $@
+
+qrspiral.137.pgm: qrspiral
+	./qrspiral 137 0 256 > $@
+
+qrspiral.65537.pgm: qrspiral
+	./qrspiral 65537 0 256 > $@
+
+qrspiral: qrspiral.o
+	$(CXX) -o $@ $(CXXFLAGS) $^ -lgmp -lgmpxx -lm
+
+qrspiral.o: qrspiral.cpp
+	$(CXX) -o $@ $(CXXFLAGS) -c $^
+
+qrspiral-clean:
+	rm -f qrspiral.o qrspiral.*.pgm qrspiral

@@ -1,0 +1,39 @@
+.PHONY: install
+install: all
+	if [ -e "$(PREFIX)/$(PROJECT).$(VERSION)" ] ; then \
+	  mv $(PREFIX)/$(PROJECT).$(VERSION) $(PREFIX)/$(PROJECT).$(VERSION)~$(NOW); \
+	fi
+
+	mkdir -p $(PREFIX)/$(PROJECT).$(VERSION)
+	rm -f $(PREFIX)/$(PROJECT)
+	ln -sf $(PROJECT).$(VERSION) $(PREFIX)/$(PROJECT)
+	
+	mkdir -p $(PREFIX)/$(PROJECT).$(VERSION)/bin
+	for i in $(BIN); do ln -sf ../$(PROJECT)/bin/$$i $(PREFIX)/bin/$$i; done
+
+	mkdir -p $(PREFIX)/$(PROJECT)/lib
+	cp -fp $(LIB) $(PREFIX)/$(PROJECT)/lib/
+	for i in $(LIB); do ln -sf ../$(PROJECT)/lib/$$i $(PREFIX)/lib/$$i; done
+
+	mkdir -p $(PREFIX)/$(PROJECT)/include
+	cp -fp $(HDR) $(PREFIX)/$(PROJECT)/include/
+	rm -f $(PREFIX)/include/BankOfEuler
+	ln -sf ../$(PROJECT)/include $(PREFIX)/include/BankOfEuler
+	
+	cp -f $(BIN) $(PREFIX)/$(PROJECT)/bin
+	cp -rpf example/* $(PREFIX)/$(PROJECT)
+	rm -f $(PREFIX)/$(PROJECT)/example/Makefile
+	
+	mkdir -m 0700 -p $(PREFIX)/$(PROJECT)/values
+	mkdir -m 0700 -p $(PREFIX)/$(PROJECT)/sparams
+	mkdir -m 0755 -p $(PREFIX)/$(PROJECT)/params
+	mkdir -m 1700 -p $(PREFIX)/$(PROJECT)/logs
+	
+	chmod 0600 $(PREFIX)/$(PROJECT)/bankserve.conf
+	chmod 0644 $(PREFIX)/$(PROJECT)/bankshell.conf
+
+	find $(PREFIX)/$(PROJECT)/ -name .svn |xargs rm -rf
+	
+	@ echo
+	@ echo BankOfEuler has been installed in $(PREFIX)/$(PROJECT).
+	@ echo Links have been made in $(PREFIX)/bin.

@@ -1,0 +1,12 @@
+.PHONY: srcdist
+srcdist: $(PROJECT).$(VERSION).src.tar.gz
+
+$(PROJECT).$(VERSION).src.tar.gz:
+	make -C example clean
+	rm -rf $(PROJECT).$(VERSION).src
+	mkdir $(PROJECT).$(VERSION).src
+	cp -rpf $(SRC) flipserve $(PROJECT).$(VERSION).src
+	find $(PROJECT).$(VERSION).src/ -name .svn |xargs rm -rf
+	echo 'export VERSION=$(VERSION)' > $(PROJECT).$(VERSION).src/Makefile.version
+	tar -czvf $(PROJECT).$(VERSION).src.tar.gz $(PROJECT).$(VERSION).src
+	rm -rf $(PROJECT).$(VERSION).src

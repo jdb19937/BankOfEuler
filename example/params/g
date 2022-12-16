@@ -1,0 +1,5 @@
+0xb
+
+This is the generator for account numbers and values.
+
+It should be generate a group of size (p-1)/2.

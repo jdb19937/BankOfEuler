@@ -1,0 +1,14 @@
+export PROJECT = BankOfEuler
+export PREFIX = /usr/local
+
+include Makefile.version
+
+SRC = $(shell echo *.cpp *.h Makefile* FAQ LICENSE INSTALL README Ulam.png example)
+
+NOW = $(shell date +%s)
+
+BIN = bankshell bankadmin bankserve coinflip flipserve
+
+LIB = libBankOfEuler.a libBankOfEuler.so
+
+HDR = $(shell echo *.h)

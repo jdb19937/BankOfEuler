@@ -1,0 +1,5 @@
+0xccccccccccccccccccccccccccd0
+
+This is the generator for the hash function.
+
+It must generate a group of size (hp-1)*(hq-1)/4 modulo hn.
